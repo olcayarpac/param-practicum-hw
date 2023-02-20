@@ -30,6 +30,20 @@ public class ProductController : ControllerBase
         return Products;
     }
 
+    [HttpGet("products/list")]
+    public IActionResult ListProducts([FromQuery] string orderBy)
+    {
+        if(orderBy == "name"){
+            return Ok(Products.OrderBy(p => p.Name));
+        }
+        else if(orderBy == "price"){
+            return Ok(Products.OrderBy(p => p.Price));
+        }
+        else if(orderBy == "stock"){
+            return Ok(Products.OrderBy(p => p.Stock));
+        }        return BadRequest("orderBy parameter is not valid. Should be 'name', 'price' or 'stock'");
+    }
+
     [HttpGet("{id}")]
     public IEnumerable<Product> GetById(int id)
     {
