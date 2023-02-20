@@ -1,6 +1,10 @@
+using System.Net.Sockets;
 using System.Net;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using StoreAPI.Models;
 
 namespace StoreAPI.Controllers;
 
@@ -19,10 +23,14 @@ public class ProductController : ControllerBase
     private int lastId = 5;
 
     private readonly ILogger<ProductController> _logger;
+    private readonly IMongoCollection<Product> _productsCollection;
 
-    public ProductController(ILogger<ProductController> logger)
+    public ProductController(ILogger<ProductController> logger, IOptions<StoreDatabaseSettings> storeDatabaseSettings)
     {
         _logger = logger;
+        var mongoClient = new MongoClient(storeDatabaseSettings.Value.ConnectionString);
+        var mongoDatabase = mongoClient.GetDatabase(storeDatabaseSettings.Value.DatabaseName);
+        _productsCollection = mongoDatabase.GetCollection<Product>(storeDatabaseSettings.Value.ProductsCollectionName);
     }
 
     [HttpGet("products")]
@@ -36,15 +44,19 @@ public class ProductController : ControllerBase
     // returns products as ordered by desired property
     public IActionResult ListProducts([FromQuery] string orderBy)
     {
-        if(orderBy == "name"){
+        if (orderBy == "name")
+        {
             return Ok(Products.OrderBy(p => p.Name));
         }
-        else if(orderBy == "price"){
+        else if (orderBy == "price")
+        {
             return Ok(Products.OrderBy(p => p.Price));
         }
-        else if(orderBy == "stock"){
+        else if (orderBy == "stock")
+        {
             return Ok(Products.OrderBy(p => p.Stock));
-        }        return BadRequest("orderBy parameter is not valid. Should be 'name', 'price' or 'stock'");
+        }
+        return BadRequest("orderBy parameter is not valid. Should be 'name', 'price' or 'stock'");
     }
 
     [HttpGet("{id}")]
@@ -107,7 +119,8 @@ public class ProductController : ControllerBase
         foreach (PropertyInfo prop in product.GetType().GetProperties())
         {
             var propValue = prop.GetValue(product, null);
-            if(propValue != null){
+            if (propValue != null)
+            {
                 prop.SetValue(existingProduct, propValue);
             }
         }
