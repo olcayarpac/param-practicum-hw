@@ -15,6 +15,7 @@ public class ProductController : ControllerBase
         new Product{Id = 3, Price = 42699, Name = "Macbook Pro", Stock = 5 },
         new Product{Id = 4, Price = 5999, Name = "Airpods", Stock = 5 },
     };
+    // id counter
     private int lastId = 5;
 
     private readonly ILogger<ProductController> _logger;
@@ -30,7 +31,9 @@ public class ProductController : ControllerBase
         return Products;
     }
 
-    [HttpGet("products/list")]
+    [HttpGet("list")]
+    // api/Product/list?orderBy=name
+    // returns products as ordered by desired property
     public IActionResult ListProducts([FromQuery] string orderBy)
     {
         if(orderBy == "name"){
@@ -45,18 +48,23 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    // api/Product/1
+    // returns a product by id
     public IEnumerable<Product> GetById(int id)
     {
         return Products.Where(p => p.Id == id).ToArray();
     }
 
     [HttpGet]
+    // api/Product?id=1
+    // return a product by id
     public IEnumerable<Product> GetByIdQuery([FromQuery] int id)
     {
         return Products.Where(p => p.Id == id).ToArray();
     }
 
     [HttpPost]
+    // creates new product 
     public IActionResult PostProduct([FromBody] Product product)
     {
         var existingProduct = Products.SingleOrDefault(p => p.Name == product.Name);
@@ -71,6 +79,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPut]
+    // updates product
     public IActionResult PutProduct([FromBody] Product product)
     {
         var existingProduct = Products.SingleOrDefault(p => p.Id == product.Id);
@@ -86,6 +95,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPatch]
+    // updates changed properties of product
     public IActionResult PatchProduct([FromBody] Product product)
     {
         var existingProduct = Products.SingleOrDefault(p => p.Id == product.Id);
@@ -105,6 +115,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete]
+    // deletes a product
     public IActionResult DeleteProduct([FromBody] Product product)
     {
         var existingProduct = Products.SingleOrDefault(p => p.Id == product.Id);
@@ -118,7 +129,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public IActionResult DeleteProductById([FromBody] int id)
+    public IActionResult DeleteProductById(int id)
     {
         var existingProduct = Products.SingleOrDefault(p => p.Id == id);
         if (existingProduct is null)
