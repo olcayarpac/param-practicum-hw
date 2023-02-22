@@ -1,6 +1,11 @@
+using StoreAPI.Services;
+using StoreAPI.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.Configure<StoreDatabaseSettings>(builder.Configuration.GetSection("StoreDbSettings"));
+builder.Services.AddSingleton<ProductService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -17,6 +22,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("New request to " + context.Request.Path);
+    await next(context);
+});
 
 app.UseAuthorization();
 

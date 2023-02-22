@@ -1,6 +1,6 @@
-using System.Net;
-using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
+using StoreAPI.Models;
+using StoreAPI.Services;
 
 namespace StoreAPI.Controllers;
 
@@ -8,76 +8,57 @@ namespace StoreAPI.Controllers;
 [Route("api/[controller]/")]
 public class ProductController : ControllerBase
 {
-    private static List<Product> Products = new List<Product>
-    {
-        new Product{Id = 1, Price = 25699, Name = "IPhone 12", Stock = 5 },
-        new Product{Id = 2, Price = 36999, Name = "Macbook Air", Stock = 5 },
-        new Product{Id = 3, Price = 42699, Name = "Macbook Pro", Stock = 5 },
-        new Product{Id = 4, Price = 5999, Name = "Airpods", Stock = 5 },
-    };
-    // id counter
-    private int lastId = 5;
-
     private readonly ILogger<ProductController> _logger;
+    private readonly ProductService _productService;
 
-    public ProductController(ILogger<ProductController> logger)
+    public ProductController(ILogger<ProductController> logger, ProductService productService)
     {
         _logger = logger;
+        _productService = productService;
     }
 
     [HttpGet("products")]
-    public IEnumerable<Product> Get()
+    public async Task<List<Product>> Get()
     {
-        return Products;
+        return await _productService.GetAsync();
     }
 
-    [HttpGet("list")]
+    [HttpGet("sort")]
     // api/Product/list?orderBy=name
     // returns products as ordered by desired property
-    public IActionResult ListProducts([FromQuery] string orderBy)
+    public async Task<ActionResult<List<Product>>> SortProducts([FromQuery] string sortBy)
     {
-        if(orderBy == "name"){
-            return Ok(Products.OrderBy(p => p.Name));
-        }
-        else if(orderBy == "price"){
-            return Ok(Products.OrderBy(p => p.Price));
-        }
-        else if(orderBy == "stock"){
-            return Ok(Products.OrderBy(p => p.Stock));
-        }        return BadRequest("orderBy parameter is not valid. Should be 'name', 'price' or 'stock'");
+        return await _productService.SortAsync(sortBy);
+        //return BadRequest("orderBy parameter is not valid. Should be 'name', 'price' or 'stock'");
     }
 
     [HttpGet("{id}")]
     // api/Product/1
     // returns a product by id
-    public IEnumerable<Product> GetById(int id)
+    public async Task<ActionResult<Product>> GetById(string id)
     {
-        return Products.Where(p => p.Id == id).ToArray();
+        var product = await _productService.GetAsync(id);
+        return product ?? (ActionResult<Product>)NotFound();
     }
 
     [HttpGet]
     // api/Product?id=1
     // return a product by id
-    public IEnumerable<Product> GetByIdQuery([FromQuery] int id)
+    public async Task<ActionResult<Product>> GetByIdQuery([FromQuery] string id)
     {
-        return Products.Where(p => p.Id == id).ToArray();
+        var product = await _productService.GetAsync(id);
+        return product ?? (ActionResult<Product>)NotFound();
     }
 
     [HttpPost]
     // creates new product 
-    public IActionResult PostProduct([FromBody] Product product)
+    public async Task<IActionResult> Post([FromBody] Product product)
     {
-        var existingProduct = Products.SingleOrDefault(p => p.Name == product.Name);
-        if (existingProduct is not null)
-        {
-            return Conflict("Product already exists");
-        }
-        product.Id = lastId;
-        this.lastId++;
-        Products.Add(product);
-        return Created(Request.Path.Value + "/" + product.Id, product);
+        await _productService.CreateAsync(product);
+        return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
     }
 
+    /*
     [HttpPut]
     // updates product
     public IActionResult PutProduct([FromBody] Product product)
@@ -93,7 +74,9 @@ public class ProductController : ControllerBase
         Products[index] = product;
         return Ok(existingProduct);
     }
+    */
 
+    /*
     [HttpPatch]
     // updates changed properties of product
     public IActionResult PatchProduct([FromBody] Product product)
@@ -107,37 +90,39 @@ public class ProductController : ControllerBase
         foreach (PropertyInfo prop in product.GetType().GetProperties())
         {
             var propValue = prop.GetValue(product, null);
-            if(propValue != null){
+            if (propValue != null)
+            {
                 prop.SetValue(existingProduct, propValue);
             }
         }
         return Ok(existingProduct);
     }
+    */
 
-    [HttpDelete]
-    // deletes a product
-    public IActionResult DeleteProduct([FromBody] Product product)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
     {
-        var existingProduct = Products.SingleOrDefault(p => p.Id == product.Id);
+        var existingProduct = _productService.GetAsync(id);
         if (existingProduct is null)
         {
             return NotFound();
         }
 
-        Products.Remove(existingProduct);
+        await _productService.RemoveAsync(id);
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
-    public IActionResult DeleteProductById(int id)
+    [HttpDelete]
+    // deletes a product
+    public async Task<IActionResult> DeleteByIdQuery([FromQuery] string id)
     {
-        var existingProduct = Products.SingleOrDefault(p => p.Id == id);
+        var existingProduct = _productService.GetAsync(id);
         if (existingProduct is null)
         {
             return NotFound();
         }
 
-        Products.Remove(existingProduct);
+        await _productService.RemoveAsync(id);
         return NoContent();
     }
 }
