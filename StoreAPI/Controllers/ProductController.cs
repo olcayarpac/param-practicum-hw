@@ -8,7 +8,6 @@ namespace StoreAPI.Controllers;
 [Route("api/[controller]/")]
 public class ProductController : ControllerBase
 {
-    
     private readonly ILogger<ProductController> _logger;
     private readonly ProductService _productService;
 
@@ -24,7 +23,6 @@ public class ProductController : ControllerBase
         return await _productService.GetAsync();
     }
 
-    
     [HttpGet("sort")]
     // api/Product/list?orderBy=name
     // returns products as ordered by desired property
@@ -33,7 +31,6 @@ public class ProductController : ControllerBase
         return await _productService.SortAsync(sortBy);
         //return BadRequest("orderBy parameter is not valid. Should be 'name', 'price' or 'stock'");
     }
-    
 
     [HttpGet("{id}")]
     // api/Product/1
@@ -41,11 +38,7 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<Product>> GetById(string id)
     {
         var product = await _productService.GetAsync(id);
-        if(product is null)
-        {
-            return NotFound();
-        }
-        return product;
+        return product ?? (ActionResult<Product>)NotFound();
     }
 
     [HttpGet]
@@ -54,19 +47,15 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<Product>> GetByIdQuery([FromQuery] string id)
     {
         var product = await _productService.GetAsync(id);
-        if(product is null)
-        {
-            return NotFound();
-        }
-        return product;    }
-
+        return product ?? (ActionResult<Product>)NotFound();
+    }
 
     [HttpPost]
     // creates new product 
     public async Task<IActionResult> Post([FromBody] Product product)
     {
         await _productService.CreateAsync(product);
-        return CreatedAtAction(nameof(Get), new { id = product.Id}, product);
+        return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
     }
 
     /*
@@ -136,5 +125,4 @@ public class ProductController : ControllerBase
         await _productService.RemoveAsync(id);
         return NoContent();
     }
-
 }

@@ -23,6 +23,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("New request to " + context.Request.Path);
+    await next(context);
+});
+
 app.UseAuthorization();
 
 app.MapControllers();
