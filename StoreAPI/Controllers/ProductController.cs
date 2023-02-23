@@ -1,6 +1,9 @@
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using StoreAPI.Models;
 using StoreAPI.Services;
+using StoreAPI.Validators;
 
 namespace StoreAPI.Controllers;
 
@@ -54,8 +57,18 @@ public class ProductController : ControllerBase
     // creates new product 
     public async Task<IActionResult> Post([FromBody] Product product)
     {
-        await _productService.CreateAsync(product);
-        return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
+        try
+        {
+            PostProductValidator validator = new PostProductValidator();
+            validator.ValidateAndThrow(product);
+            await _productService.CreateAsync(product);
+            return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
     }
 
     [HttpPut("{id}")]
@@ -63,11 +76,12 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> PutProduct([FromRoute] string id, [FromBody] Product product)
     {
         var existingProduct = await _productService.GetAsync(id);
-        if(existingProduct is null){
+        if (existingProduct is null)
+        {
             return NotFound();
         }
         await _productService.UpdateAsync(id, product);
-        return  NoContent();
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
