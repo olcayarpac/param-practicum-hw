@@ -58,46 +58,17 @@ public class ProductController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
     }
 
-    /*
-    [HttpPut]
+    [HttpPut("{id}")]
     // updates product
-    public IActionResult PutProduct([FromBody] Product product)
+    public async Task<IActionResult> PutProduct([FromRoute] string id, [FromBody] Product product)
     {
-        var existingProduct = Products.SingleOrDefault(p => p.Id == product.Id);
-        if (existingProduct is null)
-        {
-            Products.Add(product);
-            lastId++;
-            return Created(Request.Path.Value + "/" + product.Id, product);
-        }
-        var index = Products.IndexOf(existingProduct);
-        Products[index] = product;
-        return Ok(existingProduct);
-    }
-    */
-
-    /*
-    [HttpPatch]
-    // updates changed properties of product
-    public IActionResult PatchProduct([FromBody] Product product)
-    {
-        var existingProduct = Products.SingleOrDefault(p => p.Id == product.Id);
-        if (existingProduct is null)
-        {
+        var existingProduct = await _productService.GetAsync(id);
+        if(existingProduct is null){
             return NotFound();
         }
-
-        foreach (PropertyInfo prop in product.GetType().GetProperties())
-        {
-            var propValue = prop.GetValue(product, null);
-            if (propValue != null)
-            {
-                prop.SetValue(existingProduct, propValue);
-            }
-        }
-        return Ok(existingProduct);
+        await _productService.UpdateAsync(id, product);
+        return  NoContent();
     }
-    */
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
