@@ -1,5 +1,6 @@
 using StoreAPI.Services;
 using StoreAPI.Models;
+using StoreAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,13 +24,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.Use(async (context, next) =>
-{
-    Console.WriteLine("New request to " + context.Request.Path);
-    await next(context);
-});
-
 app.UseAuthorization();
+
+app.UseCustomExceptionMiddleware();
 
 app.MapControllers();
 
